@@ -6,8 +6,10 @@ import json
 import urllib.request
 import urllib.parse
 
+requests.packages.urllib3.disable_warnings()
+
 import ssl
-ssl.create_server_context = ssl._create_unverified_context
+
 
 
 app = Flask(__name__)
