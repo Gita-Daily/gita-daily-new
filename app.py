@@ -1,14 +1,14 @@
 # coding=utf-8
 
 from flask import Flask, request
-from apscheduler.schedulers.background import BackgroundScheduler  # to run the code in background
 import requests
 import json
 import urllib.request
 import urllib.parse
-import ssl
 
-ssl._create_default_https_context = ssl._create_unverified_context
+import ssl
+ssl.create_server_context = ssl._create_unverified_context
+
 
 app = Flask(__name__)
 app.app_context().push()
@@ -74,7 +74,7 @@ def getChSh(n):
     
     return (ch, n);
 
-# @app.route("/init", methods=['GET'])
+@app.route("/init", methods=['GET'])
 def print_date_time():
     for phone_no in users.keys():
         user_data = users[phone_no];
@@ -103,15 +103,16 @@ def print_date_time():
             return_webhook_url = 'https://betablaster.in/api/send.php?number={}&type=text&message={}&instance_id=626A3E916DE40&access_token=5a30cf125df4e52a36ce4daa0403885f'.format(phone_no, encoded_msg)
             print(return_webhook_url)
             urllib.request.urlopen(return_webhook_url)
+            print('SYCCESS HOORRAAAAYYY')
             users[phone_no][0] = users[phone_no][0] + 1
 
     return ""
 
 
 if __name__ == "__main__":
-    sched = BackgroundScheduler()
-    sched.start()
-    sched.add_job(print_date_time, 'interval', seconds=40)
+    # sched = BackgroundScheduler()
+    # sched.start()
+    # sched.add_job(print_date_time, 'interval', seconds=40)
     app.run(debug=True)
     
 
