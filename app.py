@@ -6,16 +6,21 @@ import json
 import urllib.request
 import urllib.parse
 import urllib3
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
 http = urllib3.PoolManager()
+
+cred = credentials.Certificate('gita-daily-ee5f6-25032c526a9d.json')
+firebase_admin.initialize_app(cred)
+
+
+db = firestore.client()
 # r = http.request('GET', 'http://docs.python.org')
 # htmlSource = r.data
 
 requests.packages.urllib3.disable_warnings()
-
-import ssl
-
-
 
 app = Flask(__name__)
 app.app_context().push()
@@ -45,6 +50,12 @@ def runserver():
             phone_no = msg['key']['remoteJid'][:12]
 
             if phone_no not in users.keys() and ( msg_text.lower().strip() == 'hare krishna' or msg_text.lower().strip() == 'hare krisna' or msg_text.lower().strip() == 'hare krsna'):
+                doc_ref = db.collection(u'users').document(phone_no)
+                doc_ref.set({
+                    u'name': name,
+                    u'subscribe': True,
+                    u'shlok': 1
+                })
                 users[phone_no] = [1, True, name]
                 encoded_msg = urllib.parse.quote('*Hare Krishna {}!* \n\nYou are now subscribed to receive daily Bhagvad Gita shlokas. \n\nYou will receive a message every day at 5:00 AM. \n\nYou can unsubscribe anytime by sending "unsubscribe" to this number. \n\nYour journey of self realisation starts now.'.format(name))
                 return_webhook_url = 'https://betablaster.in/api/send.php?number={}&type=text&message={}&instance_id=626A3E916DE40&access_token=5a30cf125df4e52a36ce4daa0403885f'.format(phone_no, encoded_msg)
@@ -92,11 +103,13 @@ def getChSh(n):
 
 @app.route("/init", methods=['GET'])
 def print_date_time():
-    print('user keys {}'.format(users.keys()))
-    for phone_no in users.keys():
-        user_data = users[phone_no];
-        if(user_data[1]):
-            ch, sh = getChSh(user_data[0]);
+    doc_ref = db.collection(u'users').stream()
+    for doc in doc_ref:
+        document = db.collection(u'users').document(doc.id)
+        print('user keys {}'.format(document))
+        user_data = document.get().to_dict()
+        if(user_data['subscribe']):
+            ch, sh = getChSh(user_data['shlok'])
             URL = 'https://bhagavadgitaapi.in/slok/{}/{}'.format(ch, sh)
             print(URL)
             page = requests.get(URL)
@@ -117,11 +130,15 @@ def print_date_time():
                 message_text = result['slok'] + '\n\n' + result['transliteration'] + '\n\nCommentary by ' + result['siva']['author'] + '\n\nTranslation: ' + result['siva']['et'] + '\n\nWord By Word Meaning:' + wrd_by_wrd_translation + '\n\nCommentary: ' + commentary
 
             encoded_msg = urllib.parse.quote(message_text)
-            return_webhook_url = 'https://betablaster.in/api/send.php?number={}&type=text&message={}&instance_id=626A3E916DE40&access_token=5a30cf125df4e52a36ce4daa0403885f'.format(phone_no, encoded_msg)
+            return_webhook_url = 'https://betablaster.in/api/send.php?number={}&type=text&message={}&instance_id=626A3E916DE40&access_token=5a30cf125df4e52a36ce4daa0403885f'.format(doc.id, encoded_msg)
             print(return_webhook_url)
             r=http.request('GET', return_webhook_url)
             print(r.data)
-            users[phone_no][0] = users[phone_no][0] + 1
+            db.collection(u'users').document(doc.id).set({
+                u'name': user_data['name'],
+                u'subscribe': user_data['subscribe'],
+                u'shlok': user_data['shlok']+1
+            })
 
     return ""
 
