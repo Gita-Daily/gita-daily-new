@@ -118,8 +118,8 @@ def print_date_time():
             encoded_msg = urllib.parse.quote(message_text)
             return_webhook_url = 'https://betablaster.in/api/send.php?number={}&type=text&message={}&instance_id=626A3E916DE40&access_token=5a30cf125df4e52a36ce4daa0403885f'.format(phone_no, encoded_msg)
             print(return_webhook_url)
-            urllib.request.urlopen(return_webhook_url)
-            print('SYCCESS HOORRAAAAYYY')
+            r=http.request('GET', return_webhook_url)
+            print(r.data)
             users[phone_no][0] = users[phone_no][0] + 1
 
     return ""
