@@ -92,6 +92,7 @@ def getChSh(n):
 
 @app.route("/init", methods=['GET'])
 def print_date_time():
+    print('user keys {}'.format(users.keys()))
     for phone_no in users.keys():
         user_data = users[phone_no];
         if(user_data[1]):
